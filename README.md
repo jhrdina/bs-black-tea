@@ -1,6 +1,10 @@
-# Basic Reason Template
+# Black TEA
 
-Hello! This project allows you to quickly get started with Reason and BuckleScript. If you wanted a more sophisticated version, try the `react` template (`bsb -theme react -init .`).
+Simplified version of [OvermindDL1/bucklescript-tea](https://github.com/OvermindDL1/bucklescript-tea) with following extra features:
+
+- No view layer. Use included Provider to use with ReasonReact or use it without any view (for libraries or something).
+- Support of both Native and JavaScript compile targets (ReasonReact provider is not available on Native)
+
 
 # Build
 ```
