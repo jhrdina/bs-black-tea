@@ -1,0 +1,1 @@
+type applicationCallbacks('msg) = {enqueue: 'msg => unit};

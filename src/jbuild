@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(library
+ ((name bs_black_tea)
+  (public_name bs-black-tea)
+  (libraries ())))

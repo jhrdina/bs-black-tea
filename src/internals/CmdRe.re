@@ -1,0 +1,20 @@
+type applicationCallbacks('msg) = VdomRe.applicationCallbacks('msg);
+
+type t('msg) =
+  | NoCmd
+  | Tagger(ref(applicationCallbacks('msg)) => unit)
+  | Batch(list(t('msg)))
+  | EnqueueCall(ref(applicationCallbacks('msg)) => unit);
+
+let none = NoCmd;
+let batch = cmds => Batch(cmds);
+let call = call => EnqueueCall(call);
+
+let rec run = callbacks =>
+  fun
+  | NoCmd => ()
+  | Tagger(tagger) => tagger(callbacks)
+  | Batch(cmds) => cmds |> List.iter(cmd => run(callbacks, cmd))
+  | EnqueueCall(cb) =>
+    /* let () = Js.log ("Cmd.run", "enqueue", cb) in */
+    cb(callbacks);
