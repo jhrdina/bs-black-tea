@@ -18,3 +18,9 @@ let rec run = callbacks =>
   | EnqueueCall(cb) =>
     /* let () = Js.log ("Cmd.run", "enqueue", cb) in */
     cb(callbacks);
+
+let wrapCallbacks = (toWrapperMsg, callbacks) =>
+  VdomRe.(ref({enqueue: msg => callbacks^.enqueue(msg |> toWrapperMsg)}));
+
+let map = (toWrapperMsg, cmd) =>
+  Tagger(callbacks => run(wrapCallbacks(toWrapperMsg, callbacks), cmd));
