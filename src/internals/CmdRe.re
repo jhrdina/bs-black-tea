@@ -9,6 +9,7 @@ type t('msg) =
 let none = NoCmd;
 let batch = cmds => Batch(cmds);
 let call = call => EnqueueCall(call);
+let msg = msg => VdomRe.(EnqueueCall(callbacks => callbacks^.enqueue(msg)));
 
 let rec run = callbacks =>
   fun
