@@ -25,6 +25,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "ocaml-diff": "^0.1.0",
     "reason-react": "^0.5.3"
   }
 }

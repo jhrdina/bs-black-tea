@@ -10,7 +10,7 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["reason-react"],
+  "bs-dependencies": ["reason-react", "ocaml-diff"],
   "warnings": {
     "error": "+101"
   },

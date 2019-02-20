@@ -12,11 +12,11 @@ type pumpInterface('model, 'msg) = {
 };
 
 let programLoop = (update, subscriptions, initModel, initCmd, callbacks) => {
-  let oldSub = ref(SubRe.none);
+  let subscriptionsMap = ref(SubRe.Map.empty);
   let handleSubscriptionChange = model => {
     /* let open Vdom in */
     let newSub = subscriptions(model);
-    oldSub := SubRe.run(callbacks, callbacks, oldSub^, newSub);
+    subscriptionsMap := SubRe.run(callbacks, subscriptionsMap^, newSub);
   };
   {
     startup: () => {
@@ -31,7 +31,7 @@ let programLoop = (update, subscriptions, initModel, initCmd, callbacks) => {
     },
     shutdown: cmd => {
       CmdRe.run(callbacks, cmd);
-      oldSub := SubRe.run(callbacks, callbacks, oldSub^, SubRe.none);
+      subscriptionsMap := SubRe.run(callbacks, subscriptionsMap^, SubRe.none);
       ();
     },
   };

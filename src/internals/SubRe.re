@@ -1,16 +1,24 @@
+module Map = OcamlDiff.Map.Make(String);
+type subMapItem('msg) = (
+  (ref(VdomRe.applicationCallbacks('msg)), unit) => unit,
+  ref(option(unit => unit)),
+);
+
 type t('msg) =
   | NoSub: t(_)
   | Batch(list(t('msg))): t('msg)
   | Registration(
-                  string,
-                  (ref(VdomRe.applicationCallbacks('msg)), unit) => unit,
-                  ref(option(unit => unit)),
-                ): t('msg)
+      string,
+      (ref(VdomRe.applicationCallbacks('msg)), unit) => unit,
+      ref(option(unit => unit)),
+    )
+    : t('msg)
   | Mapper(
-            ref(VdomRe.applicationCallbacks('msg)) =>
-            ref(VdomRe.applicationCallbacks('msgB)),
-            t('msgB),
-          ): t('msg);
+      ref(VdomRe.applicationCallbacks('msg)) =>
+      ref(VdomRe.applicationCallbacks('msgB)),
+      t('msgB),
+    )
+    : t('msg);
 
 type applicationCallbacks('msg) = VdomRe.applicationCallbacks('msg);
 
@@ -31,88 +39,74 @@ let map = (msgMapper, sub) => {
 
 let mapFunc = (func, sub) => [@implicit_arity] Mapper(func, sub);
 
-let rec run:
-  type msgOld msgNew.
+let globalizeEnCB:
+  type msgB.
     (
-      ref(VdomRe.applicationCallbacks(msgOld)),
-      ref(VdomRe.applicationCallbacks(msgNew)),
-      t(msgOld),
-      t(msgNew)
+      (ref(VdomRe.applicationCallbacks(msgB)), unit) => unit,
+      ref(VdomRe.applicationCallbacks('msg)) =>
+      ref(VdomRe.applicationCallbacks(msgB)),
+      ref(VdomRe.applicationCallbacks('msg)),
+      unit
     ) =>
-    t(msgNew) =
-  (oldCallbacks, newCallbacks, oldSub, newSub) => {
-    let rec enable:
-      type msg. (ref(VdomRe.applicationCallbacks(msg)), t(msg)) => unit =
-      callbacks =>
-        fun
-        | NoSub => ()
-        | Batch([]) => ()
-        | Batch(subs) => List.iter(enable(callbacks), subs)
-        | [@implicit_arity] Mapper(mapper, sub) => {
-            let subCallbacks = mapper(callbacks);
-            enable(subCallbacks, sub);
-          }
-        | [@implicit_arity] Registration(_key, enCB, diCB) =>
-          diCB := Some(enCB(callbacks));
-    let rec disable:
-      type msg. (ref(VdomRe.applicationCallbacks(msg)), t(msg)) => unit =
-      callbacks =>
-        fun
-        | NoSub => ()
-        | Batch([]) => ()
-        | Batch(subs) => List.iter(disable(callbacks), subs)
-        | [@implicit_arity] Mapper(mapper, sub) => {
-            let subCallbacks = mapper(callbacks);
-            disable(subCallbacks, sub);
-          }
-        | [@implicit_arity] Registration(_key, _enCB, diCB) =>
-          switch (diCB^) {
-          | None => ()
-          | Some(cb) =>
-            let () = diCB := None;
-            cb();
-          };
-    [@ocaml.warning "-4"]
-    (
-      switch (oldSub, newSub) {
-      | (NoSub, NoSub) => newSub
-      | (
-          [@implicit_arity] Registration(oldKey, _oldEnCB, oldDiCB),
-          [@implicit_arity] Registration(newKey, _newEnCB, newDiCB),
-        )
-          when oldKey == newKey =>
-        let () = newDiCB := oldDiCB^;
-        newSub;
-      | (
-          [@implicit_arity] Mapper(oldMapper, oldSubSub),
-          [@implicit_arity] Mapper(newMapper, newSubSub),
+    unit =
+  (enCB, mapper, callbacks) => enCB(callbacks |> mapper);
+
+
+
+let run:
+  (
+    ref(VdomRe.applicationCallbacks('glMsg)),
+    Map.t(subMapItem('glMsg)),
+    t('glMsg)
+  ) =>
+  Map.t(subMapItem('glMsg)) =
+  (callbacks, oldSub, newSub) => {
+    let rec subToMap:
+      type msg.
+        (
+          ref(VdomRe.applicationCallbacks('globMsg)) =>
+          ref(VdomRe.applicationCallbacks(msg)),
+          Map.t(subMapItem('globMsg)),
+          t(msg)
         ) =>
-        let olderCallbacks = oldMapper(oldCallbacks); /* Resolve the type checker */
-        let newerCallbacks = newMapper(newCallbacks);
-        let _newerSubSub =
-          run(olderCallbacks, newerCallbacks, oldSubSub, newSubSub);
-        newSub;
-      | (Batch(oldSubs), Batch(newSubs)) =>
-        let rec aux = (oldList, newList) =>
-          switch (oldList, newList) {
-          | ([], []) => ()
-          | ([], [newSubSub, ...newRest]) =>
-            let () = enable(newCallbacks, newSubSub);
-            aux([], newRest);
-          | ([oldSubSub, ...oldRest], []) =>
-            let () = disable(oldCallbacks, oldSubSub);
-            aux(oldRest, []);
-          | ([oldSubSub, ...oldRest], [newSubSub, ...newRest]) =>
-            let _newerSubSub =
-              run(oldCallbacks, newCallbacks, oldSubSub, newSubSub);
-            aux(oldRest, newRest);
-          };
-        let () = aux(oldSubs, newSubs);
-        newSub;
-      | (oldS, newS) =>
-        let () = disable(oldCallbacks, oldS);
-        let () = enable(newCallbacks, newS);
-        newSub;
-      }
+        Map.t(subMapItem('globMsg)) =
+      (mapper, map, sub) => {
+        switch (sub) {
+        | NoSub => map
+        | [@implicit_arity] Registration(newKey, newEnCB, newDiCB) =>
+          map |> Map.add(newKey, (globalizeEnCB(newEnCB, mapper), newDiCB))
+        | [@implicit_arity] Mapper(newMapper, newSubSub) =>
+          subToMap(r => r |> mapper |> newMapper, map, newSubSub)
+        | Batch(newSubs) => newSubs |> List.fold_left(subToMap(mapper), map)
+        };
+      };
+
+    let newSubMap = newSub |> subToMap(a => a, Map.empty);
+
+    Map.symmetric_diff(
+      oldSub,
+      newSubMap,
+      ~f=
+        ((_key, diffRes), _acc) =>
+          switch (diffRes) {
+          | Left((_enCB, diCB)) =>
+            // Js.log("[SubRe] Disabling " ++ key);
+            switch (diCB^) {
+            | None => ()
+            | Some(cb) =>
+              diCB := None;
+              cb();
+            }
+          | Right((enCB, diCB)) =>
+            // Js.log("[SubRe] Enabling " ++ key);
+            diCB := Some(enCB(callbacks))
+          | Unequal((_enCB1, diCB1), (_enCB2, diCB2)) => diCB2 := diCB1^
+          },
+      ~acc=(),
+      ~veq=
+        ((enCB1, diCB1), (enCB2, diCB2)) =>
+          enCB1 === enCB2 && diCB1 === diCB2,
     );
+
+    newSubMap;
   };
