@@ -1,18 +1,10 @@
 {
   "name": "bs-black-tea",
-  "version": "0.1.0",
+  "bsc-flags": ["-bs-no-version-header", "-bs-super-errors"],
   "sources": {
     "dir": "src",
     "subdirs": true
   },
-  "package-specs": {
-    "module": "commonjs",
-    "in-source": true
-  },
-  "suffix": ".bs.js",
   "bs-dependencies": ["reason-react", "ocaml-diff"],
-  "warnings": {
-    "error": "+101"
-  },
   "refmt": 3
 }
