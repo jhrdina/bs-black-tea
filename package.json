@@ -1,6 +1,6 @@
 {
   "name": "bs-black-tea",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reason + TEA (The Elm Architecture) with React support",
   "main": "index.js",
   "scripts": {
