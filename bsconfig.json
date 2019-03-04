@@ -1,10 +1,19 @@
 {
   "name": "bs-black-tea",
-  "bsc-flags": ["-bs-no-version-header", "-bs-super-errors"],
-  "sources": {
-    "dir": "src",
-    "subdirs": true
+  "reason": {
+    "react-jsx": 2
   },
+  "bsc-flags": ["-bs-no-version-header", "-bs-super-errors"],
+  "sources": [
+    {
+      "dir": "src",
+      "subdirs": true
+    },
+    {
+      "dir": "examples",
+      "type": "dev"
+    }
+  ],
   "bs-dependencies": ["reason-react", "ocaml-diff"],
   "refmt": 3
 }
