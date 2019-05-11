@@ -2,21 +2,46 @@
 
 Simplified version of [OvermindDL1/bucklescript-tea](https://github.com/OvermindDL1/bucklescript-tea) with following extra features:
 
-- No view layer. Use included Provider to use with ReasonReact or use it without any view (for libraries or something).
-- Support of both Native and JavaScript compile targets (ReasonReact provider is not available on Native)
+- No view layer. You can subscribe to model changes and specify your own handling ([example](examples/Example.re)) or use our Provider for **ReasonReact** (see [example](examples/ReactExample.re)).
+- Improved subscriptions handling
+- Future support of both Native and JavaScript compile targets (ReasonReact provider is not available on Native)
 
+## Usage
 
-# Build
+Add the package to your project
+
+```
+npm install bs-black-tea
+```
+
+and add a corresponding item to the `bsconfig.json`:
+
+```json
+"bs-dependencies": ["bs-black-tea"],
+```
+
+For usage info see [**examples**](examples) folder.
+
+## Development
+
+### Build
+
 ```
 npm run build
 ```
 
-# Build + Watch
+### Build + Watch
 
 ```
 npm run start
 ```
 
+### Run examples
 
-# Editor
-If you use `vscode`, Press `Windows + Shift + B` it will build automatically
+First run webpack in watch mode to create JS bundles using
+
+```
+npm run webpack
+```
+
+and open `examples/Example.html` or `examples/ReactExample.html`. There is no need to run a webserver.

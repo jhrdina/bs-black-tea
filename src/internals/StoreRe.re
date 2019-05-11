@@ -1,3 +1,5 @@
+// Based on https://github.com/OvermindDL1/bucklescript-tea by OvermindDL1
+
 type pumpInterface('model, 'msg) = {
   startup: unit => unit,
   handleMsg: ('model, 'msg) => 'model,

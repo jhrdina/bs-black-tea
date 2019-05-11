@@ -1,3 +1,5 @@
+// Based on https://github.com/OvermindDL1/bucklescript-tea by OvermindDL1
+
 module Map = OcamlDiff.Map.Make(String);
 type subMapItem('msg) = (
   (ref(VdomRe.applicationCallbacks('msg)), unit) => unit,
